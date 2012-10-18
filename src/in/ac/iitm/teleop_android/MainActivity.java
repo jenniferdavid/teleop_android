@@ -1,8 +1,10 @@
 package in.ac.iitm.teleop_android;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 // [android_core/android_gingerbread_mr1]
 import org.ros.android.MessageCallable;
@@ -13,11 +15,10 @@ import org.ros.android.view.RosTextView;
 import org.ros.namespace.GraphName;
 
 // [rosjava_core/rosjava]
+import org.ros.address.InetAddressFactory;
 import org.ros.concurrent.CancellableLoop;
-import org.ros.message.MessageFactory;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
-import org.ros.node.Node;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMain;
 import org.ros.node.NodeMainExecutor;
@@ -28,14 +29,11 @@ import org.ros.node.topic.Publisher;
  *
  */
 public class MainActivity extends RosActivity {
+	private Handler handler;
 
-	private RosTextView<std_msgs.String> rosTextView;
 	private TalkerNode mTalkerNode;
-
-	private Publisher<geometry_msgs.Twist> publisher;
-	private geometry_msgs.Twist twist;
-	private geometry_msgs.Vector3 linear; 
-	private geometry_msgs.Vector3 angular; 
+	private volatile geometry_msgs.Twist twist;
+	private RosTextView<std_msgs.String> rosTextView;
 
 	public MainActivity() {
 		// The RosActivity constructor configures the notification title and ticker messages.
@@ -50,6 +48,8 @@ public class MainActivity extends RosActivity {
 		setContentView(R.layout.main);
 		setListeners();
 
+		handler = new Handler();
+
 		rosTextView = (RosTextView<std_msgs.String>) findViewById(R.id.text);
 		rosTextView.setTopicName("chatter");
 		rosTextView.setMessageType(std_msgs.String._TYPE);
@@ -61,21 +61,17 @@ public class MainActivity extends RosActivity {
 		});
 	}
 
-	/** Called in a background thread once this [Activity] has been initialized with a master [URI] via the [MasterChooser] and a [NodeMainExecutorService] has started. */
-	/** Your [NodeMains] should be started here using the provided [NodeMainExecutor]. */
+	/** Called in a background thread once this {@link Activity} has been initialized with a master {@link URI} via the {@link MasterChooser} and a {@link NodeMainExecutorService} has started. */
+	/** Your {@link NodeMains} should be started here using the provided {@link NodeMainExecutor}. */
 	@Override
 	protected void init(NodeMainExecutor nodeMainExecutor) {
 		mTalkerNode = new TalkerNode();
 
-		NodeConfiguration nodeConfiguration = NodeConfiguration.newPrivate();
-		geometry_msgs.Vector3 linear = nodeConfiguration.getTopicMessageFactory().newFromType(geometry_msgs.Vector3._TYPE);
-		geometry_msgs.Vector3 angular = nodeConfiguration.getTopicMessageFactory().newFromType(geometry_msgs.Vector3._TYPE);
-		// At this point, the user has already been prompted to either enter the URI of a master to use or to start a master locally.
-		nodeConfiguration.setMasterUri(getMasterUri());
-
+    		NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress(), getMasterUri());
+		
+		// Execute the supplied {@link NodeMain} using the supplied {@link NodeConfiguration}.
 		nodeMainExecutor.execute(mTalkerNode, nodeConfiguration);
-		// The RosTextView is also a NodeMain that must be executed in order to start displaying incoming messages.
-		nodeMainExecutor.execute(rosTextView, nodeConfiguration);
+		nodeMainExecutor.execute(rosTextView, nodeConfiguration); // The RosTextView is also a NodeMain that must be executed in order to start displaying incoming messages.
 	}
 
 	/**
@@ -87,16 +83,13 @@ public class MainActivity extends RosActivity {
 		button_1.setOnClickListener(new View.OnClickListener() {
 
 			public void onClick(View v) {
-				linear.setX(0.1);
-				linear.setY(0.0);
-				linear.setZ(0.0);
+				twist.getLinear().setX(0.1);
+				twist.getLinear().setY(0.0);
+				twist.getLinear().setZ(0.0);
 
-				angular.setX(0.0);
-				angular.setY(0.0);
-				angular.setZ(0.2);
-
-				twist.setLinear(linear);
-				twist.setAngular(angular);
+				twist.getAngular().setX(0.0);
+				twist.getAngular().setY(0.0);
+				twist.getAngular().setZ(0.2);
 			}
 		});
 
@@ -105,16 +98,13 @@ public class MainActivity extends RosActivity {
 		button_2.setOnClickListener(new View.OnClickListener() {
 
 			public void onClick(View v) {
-				linear.setX(0.1);
-				linear.setY(0.0);
-				linear.setZ(0.0);
+				twist.getLinear().setX(0.1);
+				twist.getLinear().setY(0.0);
+				twist.getLinear().setZ(0.0);
 
-				angular.setX(0.0);
-				angular.setY(0.0);
-				angular.setZ(0.0);
-
-				twist.setLinear(linear);
-				twist.setAngular(angular);
+				twist.getAngular().setX(0.0);
+				twist.getAngular().setY(0.0);
+				twist.getAngular().setZ(0.0);
 			}
 		});
 
@@ -123,16 +113,13 @@ public class MainActivity extends RosActivity {
 		button_3.setOnClickListener(new View.OnClickListener() {
 
 			public void onClick(View v) {
-				linear.setX(0.1);
-				linear.setY(0.0);
-				linear.setZ(0.0);
+				twist.getLinear().setX(0.1);
+				twist.getLinear().setY(0.0);
+				twist.getLinear().setZ(0.0);
 
-				angular.setX(0.0);
-				angular.setY(0.0);
-				angular.setZ(-0.2);
-
-				twist.setLinear(linear);
-				twist.setAngular(angular);
+				twist.getAngular().setX(0.0);
+				twist.getAngular().setY(0.0);
+				twist.getAngular().setZ(-0.2);
 			}
 		});
 
@@ -141,16 +128,13 @@ public class MainActivity extends RosActivity {
 		button_4.setOnClickListener(new View.OnClickListener() {
 
 			public void onClick(View v) {
-				linear.setX(0.0);
-				linear.setY(0.0);
-				linear.setZ(0.0);
+				twist.getLinear().setX(0.0);
+				twist.getLinear().setY(0.0);
+				twist.getLinear().setZ(0.0);
 
-				angular.setX(0.0);
-				angular.setY(0.0);
-				angular.setZ(0.2);
-
-				twist.setLinear(linear);
-				twist.setAngular(angular);
+				twist.getAngular().setX(0.0);
+				twist.getAngular().setY(0.0);
+				twist.getAngular().setZ(0.2);
 			}
 		});
 
@@ -159,16 +143,13 @@ public class MainActivity extends RosActivity {
 		button_5.setOnClickListener(new View.OnClickListener() {
 
 			public void onClick(View v) {
-				linear.setX(0.0);
-				linear.setY(0.0);
-				linear.setZ(0.0);
+				twist.getLinear().setX(0.0);
+				twist.getLinear().setY(0.0);
+				twist.getLinear().setZ(0.0);
 
-				angular.setX(0.0);
-				angular.setY(0.0);
-				angular.setZ(0.0);
-
-				twist.setLinear(linear);
-				twist.setAngular(angular);
+				twist.getAngular().setX(0.0);
+				twist.getAngular().setY(0.0);
+				twist.getAngular().setZ(0.0);
 			}
 		});
 
@@ -177,16 +158,13 @@ public class MainActivity extends RosActivity {
 		button_6.setOnClickListener(new View.OnClickListener() {
 
 			public void onClick(View v) {
-				linear.setX(0.0);
-				linear.setY(0.0);
-				linear.setZ(0.0);
+				twist.getLinear().setX(0.0);
+				twist.getLinear().setY(0.0);
+				twist.getLinear().setZ(0.0);
 
-				angular.setX(0.0);
-				angular.setY(0.0);
-				angular.setZ(-0.2);
-
-				twist.setLinear(linear);
-				twist.setAngular(angular);
+				twist.getAngular().setX(0.0);
+				twist.getAngular().setY(0.0);
+				twist.getAngular().setZ(-0.2);
 			}
 		});
 
@@ -195,16 +173,13 @@ public class MainActivity extends RosActivity {
 		button_7.setOnClickListener(new View.OnClickListener() {
 
 			public void onClick(View v) {
-				linear.setX(-0.1);
-				linear.setY(0.0);
-				linear.setZ(0.0);
+				twist.getLinear().setX(-0.1);
+				twist.getLinear().setY(0.0);
+				twist.getLinear().setZ(0.0);
 
-				angular.setX(0.0);
-				angular.setY(0.0);
-				angular.setZ(-0.2);
-
-				twist.setLinear(linear);
-				twist.setAngular(angular);
+				twist.getAngular().setX(0.0);
+				twist.getAngular().setY(0.0);
+				twist.getAngular().setZ(-0.2);
 			}
 		});
 
@@ -213,16 +188,13 @@ public class MainActivity extends RosActivity {
 		button_8.setOnClickListener(new View.OnClickListener() {
 
 			public void onClick(View v) {
-				linear.setX(-0.1);
-				linear.setY(0.0);
-				linear.setZ(0.0);
+				twist.getLinear().setX(-0.1);
+				twist.getLinear().setY(0.0);
+				twist.getLinear().setZ(0.0);
 
-				angular.setX(0.0);
-				angular.setY(0.0);
-				angular.setZ(0.0);
-
-				twist.setLinear(linear);
-				twist.setAngular(angular);
+				twist.getAngular().setX(0.0);
+				twist.getAngular().setY(0.0);
+				twist.getAngular().setZ(0.0);
 			}
 		});
 
@@ -231,16 +203,13 @@ public class MainActivity extends RosActivity {
 		button_9.setOnClickListener(new View.OnClickListener() {
 
 			public void onClick(View v) {
-				linear.setX(-0.1);
-				linear.setY(0.0);
-				linear.setZ(0.0);
+				twist.getLinear().setX(-0.1);
+				twist.getLinear().setY(0.0);
+				twist.getLinear().setZ(0.0);
 
-				angular.setX(0.0);
-				angular.setY(0.0);
-				angular.setZ(0.2);
-
-				twist.setLinear(linear);
-				twist.setAngular(angular);
+				twist.getAngular().setX(0.0);
+				twist.getAngular().setY(0.0);
+				twist.getAngular().setZ(0.2);
 			}
 		});
 	}
@@ -257,27 +226,34 @@ public class MainActivity extends RosActivity {
 			return GraphName.of("teleop_android/talker");
 		}
 
-		/** Called when the Node has started and successfully connected to the master. */
+		/** Called when the {@link Node} has started and successfully connected to the master. */
 		@Override
 		public void onStart(final ConnectedNode connectedNode) {
-			publisher = connectedNode.newPublisher("cmd_vel", geometry_msgs.Twist._TYPE);
+			// Display "Connected to ROS MASTER" message on the screen
+			handler.post(new Runnable() {
+
+				public void run() {
+					Toast.makeText(MainActivity.this, "Connected to ROS MASTER", Toast.LENGTH_SHORT).show();
+				}
+			});
+
+			final Publisher<geometry_msgs.Twist> publisher = connectedNode.newPublisher("cmd_vel", geometry_msgs.Twist._TYPE);
 			twist = publisher.newMessage();
 
 			// This CancellableLoop will be canceled automatically when the node shuts down.
 			connectedNode.executeCancellableLoop(new CancellableLoop() {
-				private int sequenceNumber;
+				private int loop_rate;
 
 				@Override
 				protected void setup() {
-					sequenceNumber = 0;
+					loop_rate = 100;
 				}
 
-			@Override
-			protected void loop() throws InterruptedException {
-				publisher.publish(twist);
-				sequenceNumber++;
-				Thread.sleep(1000);
-			}
+				@Override
+				protected void loop() throws InterruptedException {
+					publisher.publish(twist);
+					Thread.sleep(loop_rate);
+				}
 			});
 		}
 	}
